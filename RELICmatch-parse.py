@@ -5,7 +5,7 @@ import re
 import os
 
 Usage = """
-RELICmatch-parse.py - version 1.0
+RELICmatch-parse.py - version 1.1
 
 This program converts RELIC-match output to non-interleaved format
 and prints out the list of aligned peptides with their start and end positions.
@@ -74,14 +74,24 @@ else:
             start = fragment - len(protein[seq_count-1])
             depth +=1
             ABs = line.strip().split()
+
+            ABs_uniq = []
+            for k in ABs:
+                if k not in ABs_uniq:
+                    ABs_uniq.append(k)
         
-            for x in ABs:
-                if len(re.findall("\s"+x+"\s", line)) != 1:
+            for x in ABs_uniq:
+
+                if len(re.findall("\s"+x+"\s", line)) < 1:
                     print "ERROR in the match procedure. It is probably the program bug. Please contact me immediately."
+                    print x
+                    print line 
                     sys.exit()
-                match = re.search("\s"+x+"\s",line)
-                AB.append([x, depth, start+match.start()+1,start+match.start()+len(x)])                
-        
+                else:
+                    match = re.finditer("\s"+x+"\s",line)
+                    for m in match:
+                        AB.append([x, depth, start+m.start()+1,start+m.start()+len(x)]) 
+                                       
         else:
             if line != " \n":
                 print "Please check your input file. \nIt should be exact output text file with RELIC-match alignment."
@@ -112,6 +122,31 @@ else:
         for AB in align[fragment]:
             lines[AB[1]] = lines[AB[1]][0:AB[2]-1]+AB[0]+lines[AB[1]][AB[3]:]
 
+    ### printing the parsed output
+    for i in range(1,len(lines)):
+        line=lines[i].strip().split()
+
+        for w in line:
+            if len(w)%12 != 0:
+                print "ERROR in peptide substring procedure. It is probably the program bug. Please contact me immediately."
+                print w
+                sys.exit()
+            a = len(w)/12
+            if a > 1:
+                for j in range(a):
+                    AB = w[j*12:12*(j+1)]
+                    line.append(AB)
+
+        line_uniq = []
+        for l in line:
+            if len(l)==12 and l not in line_uniq:
+                line_uniq.append(l)
+
+        for x in line_uniq:
+            match = re.finditer(x, lines[i])
+            for m in match:
+                FINAL.append([x,m.start()+1,m.start()+12])
+
     ### writing optional output file
     if outpath:
         if len(outpath.split("/")) == 1:
@@ -121,18 +156,5 @@ else:
             outfile.write(line)
         outfile.close()
 
-    ### printing the parsed output
-    for i in range(1,len(lines)):
-        line=lines[i].strip().split()
-        for AB in line:
-            if len(AB)%12 != 0:
-                print "ERROR in peptide substring procedure. It is probably the program bug. Please contact me immediately."
-                os.remove(outpath)
-                sys.exit()
-            a = len(AB)/12
-            for j in range(a):
-                x = AB[j*12:12*(j+1)]
-                match = re.search(x, lines[i])
-                FINAL.append([x,match.start()+1,match.start()+12])
     for x in FINAL:
         print x[0]+"\t"+str(x[1])+"\t"+str(x[2])
