@@ -62,7 +62,7 @@ else:
     ### filter lines and count peptides for each protein fragment
     for i in range(len(all_lines)):
         line = all_lines[i]
-        line = re.sub("\r","\n",line)
+        line = re.sub("\r\n","\n",line)
         if line.strip().endswith("0"):
             if len(AB) > 0:
                 align[protein[seq_count-1]] = AB
@@ -113,16 +113,18 @@ else:
     ### finding max depth
     max_depth = 0
     for fragment in protein:
-        for AB in align[fragment]:
-            if AB[1] > max_depth:
-                max_depth = AB[1]
+        if fragment in align:
+            for AB in align[fragment]:
+                if AB[1] > max_depth:
+                    max_depth = AB[1]
 
     ### Adding peptides to lines
     for line in range(max_depth):
         lines.append(" "*len(total_seq)+"\n")
     for fragment in protein:
-        for AB in align[fragment]:
-            lines[AB[1]] = lines[AB[1]][0:AB[2]-1]+AB[0]+lines[AB[1]][AB[3]:]
+        if fragment in align:       
+            for AB in align[fragment]:
+                lines[AB[1]] = lines[AB[1]][0:AB[2]-1]+AB[0]+lines[AB[1]][AB[3]:]
 
     ### printing the parsed output
     for i in range(1,len(lines)):
