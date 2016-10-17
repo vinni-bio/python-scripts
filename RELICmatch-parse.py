@@ -5,7 +5,7 @@ import re
 import os
 
 Usage = """
-RELICmatch-parse.py - version 1.1
+RELICmatch-parse.py - version 1.2
 
 This program converts RELIC-match output to non-interleaved format
 and prints out the list of aligned peptides with their start and end positions.
@@ -62,6 +62,7 @@ else:
     ### filter lines and count peptides for each protein fragment
     for i in range(len(all_lines)):
         line = all_lines[i]
+        line = re.sub("\r","\n",line)
         if line.strip().endswith("0"):
             if len(AB) > 0:
                 align[protein[seq_count-1]] = AB
@@ -95,6 +96,7 @@ else:
         else:
             if line != " \n":
                 print "Please check your input file. \nIt should be exact output text file with RELIC-match alignment."
+                #print i
                 sys.exit()
 
     align[protein[seq_count-1]] = AB        
